@@ -140,12 +140,19 @@ nav button{font-size:10.5px}
 .row:active{background:rgba(47,127,184,.08)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style>#inst[hidden]{display:none}#inst{z-index:30;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}#inst .sheet{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;animation:sl .3s ease-out}#inst img{width:64px;height:64px;border-radius:16px;box-shadow:0 8px 20px -8px rgba(31,63,134,.5)}#inst b{font-size:18px;color:var(--tx)}#inst span{font-size:14px;color:var(--mu)}#inst .btn{margin:0}</style>
 </head>
 <body>
 <div id="app"><header><img class="lg" src="hisaab-192.png" alt=""><h1 id="ttl" data-a="accts" style="cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mera Hisaab</h1><button class="ib" data-a="setg" aria-label="Settings">⚙️</button></header><div id="main"></div></div>
 <button class="fab" data-a="add" aria-label="Naya">+</button>
 <nav><div id="nav"></div></nav>
 <div id="ovs"></div>
+<div class="ov" id="inst" hidden role="dialog" aria-modal="true" aria-labelledby="instT"><div class="sheet">
+<img src="hisaab-192.png" alt="" width="64" height="64" onerror="this.style.display='none'">
+<b id="instT">Mera Hisaab install karo</b><span id="instX"></span>
+<button class="btn" id="instGo" type="button">Install karo</button>
+<button class="btn sec" id="instLater" type="button">Baad mein</button>
+</div></div>
 <script>
 'use strict';
 const AK='hs_accts_v1';
@@ -542,6 +549,34 @@ if('serviceWorker' in navigator){const had=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||window.__rl)return;window.__rl=1;if($('#ovs').children.length)pendingReload=true;else location.reload()})}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('#ovs').children.length&&processRec()){save();render()}});
 window.__t={S:()=>S,UI,render,fmt,bv,refreshRates};
+</script>
+<script>
+(function(){
+  var box=document.getElementById('inst'),go=document.getElementById('instGo'),later=document.getElementById('instLater'),tx=document.getElementById('instX'),dp=null;
+  var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone;
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent),KEY='hisaab.installLater';
+  function waiting(){try{return Date.now()-(+localStorage.getItem(KEY)||0)<3*864e5;}catch(e){return false;}}
+  function setup(){
+    if(dp){tx.textContent='Home screen par icon aayega, aur bina internet ke bhi khulegi.';go.hidden=false;}
+    else if(ios){tx.textContent='Neeche Share dabao, phir "Add to Home Screen" chuno.';go.hidden=true;}
+    else{tx.textContent='Browser ke menu (teen bindu) me "Install app" ya "Add to Home screen" chuno.';go.hidden=true;}
+  }
+  function hide(){box.hidden=true;}
+  function dismiss(){hide();try{localStorage.setItem(KEY,String(Date.now()));}catch(e){}}
+  function tryShow(){
+    if(waiting())return;
+    var ovs=document.getElementById('ovs');
+    if(ovs&&ovs.children.length){setTimeout(tryShow,8000);return;}
+    setup();box.hidden=false;
+  }
+  if(standalone||!window.isSecureContext)return;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;setup();});
+  setTimeout(tryShow,3500);
+  go.addEventListener('click',function(){if(!dp)return;dp.prompt();dp.userChoice.then(function(){hide();dp=null;});});
+  later.addEventListener('click',dismiss);
+  box.addEventListener('click',function(e){if(e.target===box)dismiss();});
+  window.addEventListener('appinstalled',hide);
+})();
 </script>
 </body>
 </html>
